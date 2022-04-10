@@ -13,6 +13,7 @@ import COIN_LIST from 'constants/coinList'
 import PendingTx from '../../PendingTx'
 import { emptyAddress } from '../../../utils/utils'
 import { formatsByCoinType } from '@ensdomains/address-encoder'
+import getENS from 'api/ens'
 
 import {
   GET_ADDRESSES,
@@ -206,30 +207,50 @@ export default function Records({
     stopEditing,
     resetPending
   } = actions
-
-  const { data: dataResolver } = useQuery(GET_RESOLVER_FROM_SUBGRAPH, {
+  debugger
+  /*const { data: dataResolver } = useQuery(GET_RESOLVER_FROM_SUBGRAPH, {
     variables: {
       id: getNamehash(domain.name)
     }
-  })
+  })*/
+  console.log(`----------------------------------hellohello1`)
 
-  const resolver =
-    dataResolver && dataResolver.domain && dataResolver.domain.resolver
+  //const resolver =
+  //  dataResolver && dataResolver.domain && dataResolver.domain.resolver
+
+  const resolver = {"__typename":"Resolver","coinTypes":["60"],"texts":null}
+  console.log(`hellohello1 resolver=`, resolver)
 
   const coinList =
     resolver &&
     resolver.coinTypes &&
     resolver.coinTypes.map(c => formatsByCoinType[c].name)
 
-  const { loading: addressesLoading, data: dataAddresses } = useQuery(
+  /*let { loading: addressesLoading, data: dataAddresses } = useQuery(
     GET_ADDRESSES,
     {
       variables: { name: domain.name, keys: coinList },
       skip: !coinList
     }
-  )
+  )*/
 
-  const { loading: textRecordsLoading, data: dataTextRecords } = useQuery(
+  let addressesLoading
+
+  const [dataAddresses, setMyDataAddresses] = useState()
+  const queryMyDataAddresses = async () => {
+    const varens = getENS()
+    const addr = await varens.getAddress(domain.name)
+    setMyDataAddresses(() => ({
+      getAddresses: [{key: 'ETH', value: addr}]
+    }))
+    // dataAddresses.getAddresses = [{key: 'ETH', value: addr}]
+    console.log('useEffect----getENS', addr, dataAddresses)
+  }
+  useEffect(() => {
+    queryMyDataAddresses()
+  }, [])
+
+  /*const { loading: textRecordsLoading, data: dataTextRecords } = useQuery(
     GET_TEXT_RECORDS,
     {
       variables: {
@@ -238,7 +259,12 @@ export default function Records({
       },
       skip: !dataResolver
     }
-  )
+  )*/
+
+  let textRecordsLoading = false
+  let dataTextRecords
+  //console.log(`hellohello1 textRecordsLoading=`, textRecordsLoading)
+  //console.log(`hellohello1 dataTextRecords=`, dataTextRecords)
 
   function processRecords(records, placeholder) {
     const nonDuplicatePlaceholderRecords = placeholder.filter(
@@ -269,11 +295,13 @@ export default function Records({
     loading: textRecordsLoading || addressesLoading
   }
 
+  console.log(`hellohello1 initialRecords=`, initialRecords)
+
   useEffect(() => {
-    if (textRecordsLoading === false && addressesLoading === false) {
+    //if (textRecordsLoading === false && addressesLoading === false) {
       setUpdatedRecords(initialRecords)
-    }
-  }, [textRecordsLoading, addressesLoading, dataAddresses, dataTextRecords])
+    //}
+  }, [dataAddresses])
 
   const emptyRecords = RECORDS.filter(record => {
     // Always display all options for consistency now that both Addess and text almost always have empty record
@@ -396,4 +424,5 @@ export default function Records({
       )}
     </RecordsWrapper>
   )
+//})
 }
